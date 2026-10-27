@@ -1,0 +1,9 @@
+# Hugo generated files
+/public/
+/resources/_gen/
+/.hugo_build.lock
+
+# Nix and direnv local state
+/.direnv/
+/result
+/result-*

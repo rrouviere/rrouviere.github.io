@@ -1,0 +1,9 @@
+baseURL = 'https://sixbeurre.fr/'
+locale = 'en-us'
+title = 'Sixbeurre'
+
+[params]
+  description = 'Notes about DevOps, Networking and system administration'
+
+[markup.highlight]
+  noClasses = false

@@ -1,0 +1,4 @@
+{{ define "main" }}
+<section class="page-heading"><p class="eyebrow">The archive</p><h1>{{ .Title }}</h1>{{ .Content }}</section>
+{{ range .Pages }}{{ partial "post-item.html" . }}{{ else }}<p>Nothing here yet.</p>{{ end }}
+{{ end }}

@@ -1,0 +1,36 @@
+:root { color-scheme: light dark; --bg: #f7f6f2; --ink: #202722; --muted: #68736b; --line: #d9ded7; --accent: #356b50; }
+@media (prefers-color-scheme: dark) { :root { --bg: #171d19; --ink: #e8ede7; --muted: #a6b3a8; --line: #344138; --accent: #9bc9a9; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.7 system-ui, -apple-system, sans-serif; }
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: .2em; }
+a:hover { text-decoration-thickness: 2px; }
+.site-header, main, footer { width: min(100% - 3rem, 760px); margin-inline: auto; }
+.site-header { border-bottom: 1px solid var(--line); }
+.nav { display: flex; justify-content: space-between; align-items: center; gap: 1rem; min-height: 80px; }
+.brand { color: var(--ink); font-weight: 750; letter-spacing: -.03em; text-decoration: none; font-size: 1.2rem; }
+.nav-links { display: flex; gap: 1.5rem; }
+.nav-links a { color: var(--muted); text-decoration: none; }
+.nav-links a:hover { color: var(--accent); }
+main { min-height: 65vh; padding-block: 4.5rem 6rem; }
+.intro { padding: 1rem 0 4.5rem; }
+.eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: .12em; font-size: .75rem; font-weight: 700; }
+h1, h2, h3 { line-height: 1.15; letter-spacing: -.04em; }
+h1 { font-size: clamp(2.8rem, 8vw, 5rem); margin: .5rem 0 1rem; }
+h2 { font-size: 1.5rem; }
+.lead { color: var(--muted); font-size: 1.25rem; max-width: 36rem; }
+.section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--line); }
+.section-heading a { font-size: .9rem; }
+.post-item { display: grid; grid-template-columns: 130px 1fr; gap: 1rem; padding: 1.5rem 0; border-bottom: 1px solid var(--line); }
+.post-item time { color: var(--muted); font-size: .85rem; }
+.post-item h3 { margin: 0; font-size: 1.3rem; }
+.post-item h3 a { color: var(--ink); text-decoration: none; }
+.post-item h3 a:hover { color: var(--accent); }
+.post-item p { color: var(--muted); margin: .5rem 0 0; }
+.page-heading { margin-bottom: 3rem; }
+.prose { font-size: 1.08rem; overflow-wrap: anywhere; }
+.prose h2, .prose h3 { margin-top: 2em; }
+.prose img { max-width: 100%; height: auto; }
+.prose pre { overflow-x: auto; padding: 1rem; border: 1px solid var(--line); }
+.prose blockquote { margin-left: 0; padding-left: 1.25rem; border-left: 3px solid var(--accent); color: var(--muted); }
+footer { display: flex; justify-content: space-between; padding-block: 1.5rem 2.5rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; }
+@media (max-width: 500px) { main { padding-top: 3rem; } .post-item { grid-template-columns: 1fr; gap: .3rem; } }

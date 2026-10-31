@@ -1,9 +1,24 @@
 baseURL = 'https://sixbeurre.fr/'
 locale = 'en-us'
 title = 'Sixbeurre'
+theme = 'PaperMod'
+
+[[menu.main]]
+  name = 'Posts'
+  url = '/posts/'
+  weight = 10
+
+[[menu.main]]
+  name = 'About'
+  url = '/about/'
+  weight = 20
 
 [params]
   description = 'Notes about DevOps, Networking and system administration'
+
+  [params.homeInfoParams]
+    Title = 'Sixbeurre'
+    Content = 'Notes about DevOps, Networking and system administration'
 
 [markup.highlight]
   noClasses = false

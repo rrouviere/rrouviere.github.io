@@ -1,13 +1,12 @@
 # Hugo blog
 
-A small, theme-free Hugo blog ready to publish with GitHub Pages.
+A Hugo blog using the [PaperMod](https://github.com/adityatelange/hugo-PaperMod) theme, ready to publish with GitHub Pages.
 
 ## Work locally
 
-Install [Nix](https://nixos.org/download/) with flakes enabled. In a Git checkout, add `flake.nix` to Git so Nix can see it, then run:
+Install [Nix](https://nixos.org/download/) with flakes enabled. Clone with `git clone --recurse-submodules <repository-url>`, or initialize the theme in an existing checkout with `git submodule update --init --recursive`. Then run:
 
 ```sh
-git add flake.nix
 nix develop
 hugo server -D
 ```

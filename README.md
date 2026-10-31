@@ -24,6 +24,18 @@ hugo new content posts/my-post.md
 
 Edit the resulting Markdown file and set `draft = false` when it is ready to publish. Drafts appear locally with `-D` but are excluded from the published site. The sample post can be edited or deleted.
 
+### Math
+
+Write LaTeX math inline with `$E = mc^2$` or `\(E = mc^2\)`. For a displayed equation, put `$$` (or `\[` and `\]`) on separate lines:
+
+```text
+$$
+\int_0^1 x^2 \, dx = \frac{1}{3}
+$$
+```
+
+Math is rendered in the browser using MathJax loaded from jsDelivr, so readers need a connection to that CDN. Escape literal dollar signs as `\$` to avoid treating them as math delimiters.
+
 ## Publish on GitHub Pages
 
 1. Create a GitHub repository and push these files to its `main` branch.

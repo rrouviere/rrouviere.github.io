@@ -1,5 +1,5 @@
 +++
-title = 'PlutoSDR wastes 25% of its sample payload on redundant bits'
+title = 'PlutoSDR wastes 25% of its USB2 sample payload on redundant bits'
 titleFootnoteAfter = 'wastes'
 titleFootnote = 'real-world-note'
 date = 2026-10-31

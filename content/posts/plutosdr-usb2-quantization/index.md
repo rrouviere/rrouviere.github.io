@@ -2,7 +2,7 @@
 title = 'PlutoSDR wastes 25% of its USB2 throughput on redundant bits'
 date = 2026-10-31
 description = 'Packing and quantizing PlutoSDR samples to trade precision and CPU time for USB throughput.'
-draft = true
+draft = false
 tags = ['SDR', 'PlutoSDR', 'DSP', 'USB', 'telcom', 'LTE']
 ShowToc = true
 +++

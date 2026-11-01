@@ -1,7 +1,7 @@
 +++
-title = 'PlutoSDR wastes 25% of its USB2 throughput on redundant bits'
+title = 'PlutoSDR wastes[^real-world] 25% of its sample payload on redundant bits'
 date = 2026-10-31
-description = 'Packing and quantizing PlutoSDR samples to trade precision and CPU time for USB throughput.'
+description = 'Packing and quantizing PlutoSDR samples to trade precision and CPU time for a higher sample rate over USB.'
 draft = false
 tags = ['SDR', 'PlutoSDR', 'DSP', 'USB', 'telecom', 'LTE']
 ShowToc = true
@@ -11,17 +11,19 @@ Analog Devices’ ADALM-Pluto SDR, while being an overall awesome SDR platform, 
 
 On the original board though, while there are many mods available for improving clock stability, including [external clock modifications](https://osmocom.org/issues/5892), [feeding in a reference clock](https://forum.amsat-dl.org/index.php?thread/3199-external-clock-for-adalm-pluto/) and a [simple U.FL IPEX connector on rev D](https://ez.analog.com/adiacademy/university-program/f/q-a/77922/will-it-be-possible-to-feed-in-a-reference-clock-to-the-adalm-pluto), there are not many options to alleviate the USB2 bandwidth constraints.
 
-Turns out, the native IIOD wastes 25% of its throughput on meaningless data.
+Turns out, the native IIOD wastes 25% of its sample payload throughput on redundant bits.
 
 ## What ??
 
 A complex sample has an in-phase component, $I$, and a quadrature component, $Q$.
 
+Here, throughput refers to data transferred per second in bits/s, while sample rate refers to complex samples delivered per second, typically in MS/s.
+
 The PlutoSDR ADC produces [12-bit $I$ and $Q$ values](https://www.analog.com/media/en/technical-documentation/data-sheets/ad9363.pdf#:~:text=produce%20a%2012-bit%20output%20signal). They are then put into 16-bit words by the HDL (which [pads it with 1s or 0s according to the sample's sign](https://github.com/analogdevicesinc/hdl/blob/main/library/common/ad_datafmt.v#L89-L96)) and shipped via DMA to the IIOD daemon which happily [transfers it as is](https://github.com/analogdevicesinc/libiio/blob/v0.25/iiod/ops.c#L468-L518) across the USB bus.
 
-That makes an IQ sample use four bytes of bandwidth when its useful data fits in three.
+That makes an IQ sample use four bytes of payload when its useful data fits in three.
 
-Theoretically, **we should be able to get 25% more sustained bandwidth for free, without loss of precision**[^pack12-range]. If our code can keep up. 
+Theoretically, **we should be able to get 33⅓% more samples per second for free, without loss of precision**[^pack12-range], at the same sample payload throughput. If our code can keep up. 
 
 [^pack12-range]: In some configurations, the Pluto receive path may produce values outside the signed 12-bit range ([FPGA offset addition](https://github.com/analogdevicesinc/hdl/blob/main/library/xilinx/common/ad_dcfilter.v#L99-L113), [driver calibration bias](https://github.com/analogdevicesinc/linux/blob/main/drivers/iio/adc/cf_axi_adc_core.c#L639-L645)). PACK12 does not preserve those values. The real-world impact is TBD, and further hardening may be required.
 
@@ -29,7 +31,7 @@ Theoretically, **we should be able to get 25% more sustained bandwidth for free,
 
 ### Attempt 1: Naive packing
 The first POC packed each pair of little-endian 16-bit I/Q containers into three bytes before sending them.
-This is the original packing loop from commit 852d5eb7:
+This is the original packing loop: <!-- from commit 852d5eb7 -->
 
 ```c
 static inline size_t packed12_pack_scalar(void *dst, const void *src, size_t n) {
@@ -49,9 +51,9 @@ static inline size_t packed12_pack_scalar(void *dst, const void *src, size_t n) 
 
 Note that we naively used batches of $n=4096$ bytes, which after packing gave $3,072$ byte writes. 
 
-**Performance result:** 3.682 MS/s (native 7.241 MS/s). 49.15% lower throughput than native.
+**Performance result:** 3.682 MS/s (native 7.241 MS/s). 49.15% lower sample rate than native.
 
-**Main problem:** Not only did we add the CPU overhead of packing, but we also didn't reduce the overall number of transfers. In fact given the 25% payload reduction, we could say that we've decreased performance by ~70%. Ouch.
+**Main problem:** Not only did we add the CPU overhead of packing, but we also didn't reduce the overall number of transfers. In fact given the 25% payload reduction, the sample payload throughput was about 62% lower than native. Ouch.
 
 <!-- Source: libiio-packed12-poc, commit 852d5eb7, packed12.h; campaign benchmark-report.md. -->
 
@@ -112,17 +114,19 @@ Note that these are measurements of TCP over Pluto's USB Ethernet connection and
 
 ## But why stop here ? Let's quantize
 
-If we can accept a loss in precision, what's stopping us from further reducing the bandwidth per sample by quantizing them on the pluto?
+If we can accept a loss in precision, what's stopping us from further reducing the payload per sample by quantizing them on the pluto?
 
 In fact, here is what the payload size landscape could look like:
 
-| Format          | Bits per I/Q pair | Bytes per I/Q pair | Reduction from native |
-|-----------------|------------------:|-------------------:|----------------------:|
-| Native          |                32 |                  4 |                     — |
-| PACK12          |                24 |                  3 |                   25% |
-| Q8              |                16 |                  2 |                   50% |
-| Q6              |                12 |                1.5 |                 62.5% |
-| Q4 (not tested) |                 8 |                  1 |                   75% |
+The payload reduction is per sample; the achieved gain is the measured change in delivered samples per second versus native. The theoretical sample-rate gain assumes the same sample payload throughput: for example, halving the payload per sample could ideally double the sample rate.
+
+| Format          | Bits per I/Q pair | Bytes per I/Q pair | Payload reduction | Theoretical sample-rate gain | Achieved sample-rate gain |
+|-----------------|------------------:|-------------------:|------------------:|-----------------------------:|--------------------------:|
+| Native          |                32 |                  4 |                 — |                            — |                         — |
+| PACK12          |                24 |                  3 |               25% |                       +33⅓% |                   +16.22% |
+| Q8              |                16 |                  2 |               50% |                        +100% |                    +55.5% |
+| Q6              |                12 |                1.5 |             62.5% |                      +166⅔% |                   −23.70% |
+| Q4 (not tested) |                 8 |                  1 |               75% |                        +300% |                Not tested |
 
 
 ### But doesn't Soapy already do this ?
@@ -130,7 +134,7 @@ In fact, here is what the payload size landscape could look like:
 Yes, Soapy applications can request a stream format such as `SOAPY_SDR_CS16` or `SOAPY_SDR_CS8`
 
 However, this conversion is done host-side by Soapy. This is why the distinction between application format and wire format matters.
-An application can request eight-bit samples while a driver receives 16-bit containers and converts them on the host.
+An application can request eight-bit samples while the driver receives 16-bit containers and converts them on the host.
 That saves no link bandwidth. Here, the client and IIOD explicitly select a wire format, and the client reconstructs the expected native layout after receiving it.
 
 
@@ -245,20 +249,20 @@ Early stream comparisons showed substantial native-run variability, and one samp
 
 The final test campaign used 1,024 measured blocks of 65,536 complex samples, eight warmup blocks and queue depth one. Each leg delivered 67,108,864 measured samples. Those ~30 seconds runs alternated native, Q8, native, Q8:
 
-| Run                   | Median steady time | Median delivered rate | Median improvement |
+| Run                   | Median steady time | Median delivered sample rate | Median sample-rate improvement |
 |-----------------------|-------------------:|----------------------:|-------------------:|
 | Native                |            44.43 s |            1.511 MS/s |                  - |
 | Q8                    |            28.57 s |            2.350 MS/s |             +55.5% |
 | Q6 (earlier campaign) |                  — |                     — |            −23.70% |
 
-Q8's delivered rate was **55.8% higher** in the first pair and **55.2% higher** in the second. The two native times differed by about 2.2%, and the two Q8 times by about 2.6%.
+Q8's delivered sample rate was **55.8% higher** in the first pair and **55.2% higher** in the second. The two native times differed by about 2.2%, and the two Q8 times by about 2.6%.
 
 Q6 was slower than native in every pair: **31.97%, 24.47%, 22.86%, 23.36% and 23.70%** slower. More work is needed here.
 
 ## Conclusion and how to use this patch
 
-PACK12 preserves the 12-bit values and improved throughput in every measured pair, though by varying amounts.
-Optimized Q8 traded precision for roughly 55% higher delivered rates in two later pairs.
+PACK12 preserves the 12-bit values and improved the sample rate in every measured pair, though by varying amounts.
+Optimized Q8 traded precision for roughly 55% higher delivered sample rates in two later pairs.
 Q6 used the fewest bytes but was slower in the tested implementation and had the largest quantization cost.
 
 This (very) experimental libiio patch is yet to be released pending more work into performance, reliability and general unvibecoding of this proof of concept. 
@@ -284,7 +288,7 @@ iio_buffer_stream_set_wire_format(stream, "q8-v1");
 
 Select the format before starting the stream and check the setter's return value to confirm that it was accepted by the remote.
 
-An experimental SoapySDR integration also accepts a `WIRE` stream argument:
+An experimental SoapySDR integration also accepts a `WIRE` stream argument[^soapy-wire]:
 
 ```cpp
 setupStream(
@@ -299,12 +303,14 @@ Here `WIRE` selects the transport representation, while `SOAPY_SDR_CF32` describ
 Both the client and IIOD need compatible experimental support; these tokens are not a stock Pluto or universal libiio/Soapy feature.
 A non-supported client should fallback on native mode, while a non-supported IIOD on the Pluto is not sent the new selection command: the client returns `-EOPNOTSUPP` if the `iiod,wire-formats` context attribute is absent.
 
-Note that if the old IIOD behaves properly, we should be able to patch PlutoSoapySDR to ask for the correct wire format for the asked application buffer format.
+[^soapy-wire]: Note that if the old IIOD behaves properly, we should be able to patch PlutoSoapySDR to ask for the correct wire format for the asked application buffer format.
 
 ## Open questions
 
-- Does it work in the real world, and can support be added to applications?
+- Does it work in the real world[^real-world], and can support be added to applications?
 - Is it upstreamable?
 - How does it interact with [hardware timestamping](https://www.quantulum.co.uk/blog/private-lte-with-analog-adalm-pluto/)?
 - Can performance be improved without touching the FPGA?
 - Can Q8 be made to work?
+
+[^real-world]: Surely there's a catch; it can't be this easy, right?

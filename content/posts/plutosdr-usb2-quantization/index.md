@@ -3,15 +3,15 @@ title = 'PlutoSDR wastes 25% of its USB2 throughput on redundant bits'
 date = 2026-10-31
 description = 'Packing and quantizing PlutoSDR samples to trade precision and CPU time for USB throughput.'
 draft = false
-tags = ['SDR', 'PlutoSDR', 'DSP', 'USB', 'telcom', 'LTE']
+tags = ['SDR', 'PlutoSDR', 'DSP', 'USB', 'telecom', 'LTE']
 ShowToc = true
 +++
 
-Analog Devices' ADALM-Pluto SDR is famously limited by its USB2 connectivity and clock stability, giving rise to popular forks ([Pluto+](https://opensourcesdrlab.com/products/pluto-plus), [AntSDR E200](https://www.crowdsupply.com/microphase-technology/antsdr-e200)) that include Gigabit Ethernet and a better clock.
+Analog Devices’ ADALM-Pluto SDR, while being an overall awesome SDR platform, is famously limited by its USB2 connectivity and clock stability, giving rise to popular forks ([Pluto+](https://opensourcesdrlab.com/products/pluto-plus), [AntSDR E200](https://www.crowdsupply.com/microphase-technology/antsdr-e200)) that include Gigabit Ethernet and a better clock.
 
 On the original board though, while there are many mods available for improving clock stability, including [external clock modifications](https://osmocom.org/issues/5892), [feeding in a reference clock](https://forum.amsat-dl.org/index.php?thread/3199-external-clock-for-adalm-pluto/) and a [simple U.FL IPEX connector on rev D](https://ez.analog.com/adiacademy/university-program/f/q-a/77922/will-it-be-possible-to-feed-in-a-reference-clock-to-the-adalm-pluto), there are not many options to alleviate the USB2 bandwidth constraints.
 
-Turns out, the native IIOD wastes 33% of its throughput on meaningless data.
+Turns out, the native IIOD wastes 25% of its throughput on meaningless data.
 
 ## What ??
 
@@ -21,7 +21,7 @@ The PlutoSDR ADC produces [12-bit $I$ and $Q$ values](https://www.analog.com/med
 
 That makes an IQ sample use four bytes of bandwidth when its useful data fits in three.
 
-Theoretically, **we should be able to get 33% more sustained bandwidth for free, without loss of precision**[^pack12-range]. If our code can keep up. 
+Theoretically, **we should be able to get 25% more sustained bandwidth for free, without loss of precision**[^pack12-range]. If our code can keep up. 
 
 [^pack12-range]: In some configurations, the Pluto receive path may produce values outside the signed 12-bit range ([FPGA offset addition](https://github.com/analogdevicesinc/hdl/blob/main/library/xilinx/common/ad_dcfilter.v#L99-L113), [driver calibration bias](https://github.com/analogdevicesinc/linux/blob/main/drivers/iio/adc/cf_axi_adc_core.c#L639-L645)). PACK12 does not preserve those values. The real-world impact is TBD, and further hardening may be required.
 
@@ -77,7 +77,7 @@ Note that we don't wait until accumulated `PACKED_NATIVE_BATCH` to pack, otherwi
 
 ### Attempt 3: ARM NEON packing and host SSSE3 unpacking
 
-Ok, let's bring out the big guns: the [ARM Cortex-A9](https://wiki.analog.com/university/tools/pluto/devs/specs) hardcore in the Zynq XC7Z010 does support NEON, so let's use SIMD to reduce the packing cost by processing 8 IQ samples at once:  
+Ok, let's bring out the big guns: the [ARM Cortex-A9](https://wiki.analog.com/university/tools/pluto/devs/specs) hardcore in the Zynq XC7Z010 does support [NEON](https://developer.arm.com/Architectures/Neon), so let's use SIMD to reduce the packing cost by processing 8 IQ samples at once:  
 
 ```c
 uint8x8x4_t in = vld4_u8(s + done);

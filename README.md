@@ -36,6 +36,8 @@ $$
 
 Math is rendered in the browser using MathJax loaded from jsDelivr, so readers need a connection to that CDN. Escape literal dollar signs as `\$` to avoid treating them as math delimiters.
 
+The site self-hosts [Source Sans 3](https://github.com/adobe-fonts/source-sans) and [Source Code Pro](https://github.com/adobe-fonts/source-code-pro) for text and code. Both are distributed under the SIL Open Font License 1.1; copies of their licenses are in `static/fonts/` alongside the fonts. MathJax uses its own fonts.
+
 ## Publish on GitHub Pages
 
 1. Create a GitHub repository and push these files to its `main` branch.

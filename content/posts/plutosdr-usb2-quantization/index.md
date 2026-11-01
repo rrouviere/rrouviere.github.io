@@ -1,5 +1,7 @@
 +++
-title = 'PlutoSDR wastes[^real-world] 25% of its sample payload on redundant bits'
+title = 'PlutoSDR wastes 25% of its sample payload on redundant bits'
+titleFootnoteAfter = 'wastes'
+titleFootnote = 'real-world-note'
 date = 2026-10-31
 description = 'Packing and quantizing PlutoSDR samples to trade precision and CPU time for a higher sample rate over USB.'
 draft = false
@@ -313,4 +315,4 @@ A non-supported client should fallback on native mode, while a non-supported IIO
 - Can performance be improved without touching the FPGA?
 - Can Q8 be made to work?
 
-[^real-world]: Surely there's a catch; it can't be this easy, right?
+[^real-world]: {{< anchor "real-world-note" >}}Surely there's a catch; it can't be this easy, right?

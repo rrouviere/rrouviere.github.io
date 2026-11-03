@@ -15,15 +15,15 @@ On the original board though, while there are many mods available for improving 
 
 Turns out, the native IIOD wastes 25% of its sample payload throughput on redundant bits.
 
-## What ??
+## Wait, what ?
 
-A complex sample has an in-phase component, $I$, and a quadrature component, $Q$.
-
-Here, throughput refers to data transferred per second in bits/s, while sample rate refers to complex samples delivered per second, typically in MS/s.
+As a quick reminder: SDRs produce complex samples that can be represented as an in-phase component, $I$, and a quadrature component, $Q$.
 
 The PlutoSDR ADC produces [12-bit $I$ and $Q$ values](https://www.analog.com/media/en/technical-documentation/data-sheets/ad9363.pdf#:~:text=produce%20a%2012-bit%20output%20signal). They are then put into 16-bit words by the HDL (which [pads it with 1s or 0s according to the sample's sign](https://github.com/analogdevicesinc/hdl/blob/main/library/common/ad_datafmt.v#L89-L96)) and shipped via DMA to the IIOD daemon which happily [transfers it as is](https://github.com/analogdevicesinc/libiio/blob/v0.25/iiod/ops.c#L468-L518) across the USB bus.
 
 That makes an IQ sample use four bytes of payload when its useful data fits in three.
+
+To avoid any ambiguity here, throughput refers to the payload transfered across the USB bus in bits/s, while sample rate refers to complex samples delivered per second, in MS/s (mega samples per seconds).
 
 Theoretically, **we should be able to get 33⅓% more samples per second for free, without loss of precision**[^pack12-range], at the same sample payload throughput. If our code can keep up. 
 
@@ -101,7 +101,7 @@ vst3_u8(d + done / 4 * 3, out);
 This vectorizes the same 4-byte-to-3-byte mapping by deinterleaving the four input byte streams, applying the same masks and shifts, then writing three interleaved output streams.
 The host-side also received an x86 SSSE3 unpack implementation because why not.
 
-Performance result: 8.727 MS/s (7.509 MS/s native). +16.22% vs native (over 5 measurements). Yes !
+Performance result: 8.727 MS/s (7.509 MS/s native). +16.22% vs native (over 5 measurements). Yes ! :)
 
 That last result used about 65.5 million samples per run, roughly 8 seconds per measurement.
 
@@ -116,7 +116,7 @@ Note that these are measurements of TCP over Pluto's USB Ethernet connection and
 
 ## But why stop here ? Let's quantize
 
-If we can accept a loss in precision, what's stopping us from further reducing the payload per sample by quantizing them on the pluto?
+If we can accept a loss in precision, what's stopping us from further reducing the payload per sample by quantizing them on the Pluto?
 
 In fact, here is what the payload size landscape could look like:
 
